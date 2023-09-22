@@ -130,8 +130,13 @@ function findResponsiveTime(data) {
     console.log("list of time differences:", listDifference);
     console.log("list of open issues:", openIssue);
     if (listDifference.length > 0) {
-        var sum = listDifference.reduce(function (a, b) { return a + b; }) / listDifference.length;
-        return sum;
+        var avg = listDifference.reduce(function (a, b) { return a + b; }) / listDifference.length;
+        var min = Math.min.apply(Math, listDifference);
+        var max = Math.max.apply(Math, listDifference);
+        console.log("difference avg:", avg);
+        console.log("difference avg:", min);
+        console.log("difference avg:", max);
+        return 1;
     }
     else {
         return -1;
@@ -143,22 +148,33 @@ function parseResponsiveness(filePath) {
         // Read the JSON data from the file
         var jsonData = fs.readFileSync(filePath, 'utf8');
         var data = JSON.parse(jsonData);
-        // Access the contributors URL
-        var receivedEventsUrl = data.owner.received_events_url;
+        // get the issues URLs
+        console.log(data);
+        var baseUrl = data.issues_url;
+        var issueUrl = [];
+        console.log("BASE URL:", baseUrl);
+        for (var i = 1; i <= 10; i++) {
+            var url = baseUrl.replace('{/number}', "/".concat(i));
+            issueUrl.push(url);
+        }
+        console.log("ISSUE URL:", issueUrl);
         // Fetch contributors data
-        fetch(receivedEventsUrl)
-            .then(function (response) {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-            .then(function (receivedEventsData) {
-            findResponsiveTime(receivedEventsData);
-        })
-            .catch(function (error) {
-            console.error('Error getting urls:', error);
-        });
+        for (var i = 1; i <= 10; i++) {
+            fetch(issueUrl[i])
+                .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+                .then(function (issueData) {
+                console.log(issueData);
+                //findResponsiveTime(receivedEventsData);
+            })
+                .catch(function (error) {
+                console.error('Error getting urls:', error);
+            });
+        }
     }
     catch (error) {
         console.error('Error reading or parsing JSON:', error);

@@ -119,13 +119,13 @@ function findResponsiveTime(data: any[]): number {
           //console.log('time differnece', difference);
           //console.log("");
 
-          
+
         } else {
           console.log("ID ".concat(item.id, ": Type ", item.type));
           openIssue.push(item.id);
         }
       }
-      else { 
+      else {
         console.log("ID ".concat(item.id, ": Type ", item.type));
       }
     } else {
@@ -134,12 +134,16 @@ function findResponsiveTime(data: any[]): number {
   });
   console.log("list of time differences:", listDifference);
   console.log("list of open issues:", openIssue);
-  if(listDifference.length > 0){
-    const sum = listDifference.reduce((a, b) => a + b) / listDifference.length;
-
-    return sum;
+  if (listDifference.length > 0) {
+    const avg = listDifference.reduce((a, b) => a + b) / listDifference.length;
+    const min = Math.min(...listDifference);
+    const max = Math.max(...listDifference);
+    console.log("difference avg:", avg);
+    console.log("difference avg:", min);
+    console.log("difference avg:", max);
+    return 1;
   }
-  else{
+  else {
     return -1;
   }
 }
@@ -151,22 +155,36 @@ function parseResponsiveness(filePath: string) {
     // Read the JSON data from the file
     var jsonData = fs.readFileSync(filePath, 'utf8');
     var data = JSON.parse(jsonData);
-    // Access the contributors URL
-    var receivedEventsUrl = data.owner.received_events_url;
+
+    // get the issues URLs
+    //console.log(data);
+    const baseUrl = data.issues_url;
+    const issueUrl: string[] = [];
+    console.log("BASE URL:", baseUrl);
+    for (let i = 1; i <= 10; i++) {
+      const url = baseUrl.replace('{/number}', `/${i}`);
+      issueUrl.push(url);
+    }
+    console.log("ISSUE URL:", issueUrl);
     // Fetch contributors data
-    fetch(receivedEventsUrl)
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(function (receivedEventsData) {
-        findResponsiveTime(receivedEventsData);
-      })
-      .catch(function (error) {
-        console.error('Error getting urls:', error);
-      });
+    for (let i = 1; i <= 10; i++) {
+      fetch(issueUrl[i])
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(function (issueData) {
+          console.log(issueData);
+          //findResponsiveTime(receivedEventsData);
+        })
+        .catch(function (error) {
+          console.error('Error getting urls:', error);
+        });
+
+      
+    }
   }
   catch (error) {
     console.error('Error reading or parsing JSON:', error);
