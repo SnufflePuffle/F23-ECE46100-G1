@@ -3,6 +3,7 @@ import * as fs from 'fs';
 //Test Path
 const file = 'browserify_info.json';
 const jsonpath = 'lodash_lodash_info.json';
+//const jsonpath = 'nullivex_nodist_info.json';
 
 const readJSON = (jsonPath: string, callback: (data: Record<string, any> | null) => void) => {
   fs.readFile(jsonPath, 'utf-8', (err, data) => {
@@ -74,7 +75,17 @@ function parseContributors(filePath: string) {
     // Access the contributors URL
     const contributorsUrl = data.contributors_url;
     // Fetch contributors data
-    fetch(contributorsUrl)
+
+    // to get past api rate limit, really jank since my github pat is included in plaintext lmfao
+    // DELETE THIS PART IN FINAL
+    const token = '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';
+    const headers = {
+      Authorization: `token ${token}`,
+    };
+    //end of jank
+
+    fetch(contributorsUrl, { headers }) //this line when api rate limit
+    //fetch(contributorsUrl) //this line when normal
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -98,68 +109,21 @@ function parseContributors(filePath: string) {
 
 }
 
+function findResponsiveTime(data: any) : number {
 
-//function to find time between the create and close for an issue
-function OLDfindResponsiveTime(data: any[]): number {
-  const listDifference: number[] = []; //list to keep track of time differences for avg
-  const openIssue: number[] = []; //list to keep track of open issues
-  data.forEach(function (item) {
-    var issue = item.payload.issue; //check if item is has an issue field
-    if (issue) {
-      if (!item.type.includes("omment")) { //issue comment events also has issue field so check for "omment" in type field ("type": "IssuesEvent" vs "type": "IssueCommentEvent")
-        var createdAt = new Date(issue.created_at);
-        var closedAt = issue.closed_at ? new Date(issue.closed_at) : null; //check if issue has a closed_at field
-        if (closedAt) {
-          //console.log("");
-          console.log("ID ".concat(item.id, ": Type ", item.type));
-          //console.log('created time:', createdAt);
-          //console.log('closed time:', closedAt);
-          var difference = closedAt.valueOf() - createdAt.valueOf();
-          listDifference.push(difference);
-          //console.log('time differnece', difference);
-          //console.log("");
-
-
-        } else {
-          console.log("ID ".concat(item.id, ": Type ", item.type));
-          openIssue.push(item.id);
-        }
-      }
-      else {
-        console.log("ID ".concat(item.id, ": Type ", item.type));
-      }
-    } else {
-      console.log("ID ".concat(item.id, ": Type ", item.type));
-    }
-  });
-  console.log("list of time differences:", listDifference);
-  console.log("list of open issues:", openIssue);
-  if (listDifference.length > 0) {
-    const avg = listDifference.reduce((a, b) => a + b) / listDifference.length;
-    const min = Math.min(...listDifference);
-    const max = Math.max(...listDifference);
-    console.log("difference avg:", avg);
-    console.log("difference avg:", min);
-    console.log("difference avg:", max);
-    return 1;
-  }
-  else {
-    return -1;
-  }
+  var createdAt = new Date(data.created_at);
+  var closedAt = new Date(data.closed_at);
+  //console.log('Created At:', createdAt);
+  //console.log('Closed At:', closedAt);
+  var difference = closedAt.valueOf() - createdAt.valueOf();
+  //console.log('difference:', difference);
+  return difference;
 }
 
-function findResponsiveTime(data: any) {
 
-
-    var createdAt = new Date(data.created_at);
-    var closedAt = new Date(data.created_at);
-    var difference = closedAt.valueOf() - createdAt.valueOf();
-    console.log('Created At:', createdAt);
-    console.log('Closed At:', closedAt);
-    console.log('time difference:', difference);
-}
-function parseResponsiveness(filePath: string) {
+async function parseResponsiveness(filePath: string) {
   var fs = require('fs');
+  const timeDifference: number[] = []; //list to keep track of time differences for avg
   try {
     // Read the JSON data from the file
     var jsonData = fs.readFileSync(filePath, 'utf8');
@@ -169,36 +133,51 @@ function parseResponsiveness(filePath: string) {
     //console.log(data);
     const baseUrl = data.issues_url;
     const issueUrl: string[] = [];
-    console.log("BASE URL:", baseUrl);
-    for (let i = 1; i <= 10; i++) {
+    //console.log("BASE URL:", baseUrl);
+    for (let i = 1; i <= 20; i++) {
       const url = baseUrl.replace('{/number}', `/${i}`);
       issueUrl.push(url);
     }
-    console.log("ISSUE URL:", issueUrl);
-    // Fetch contributors data
-    for (let i = 0; i < 10; i++) {
-      fetch(issueUrl[i])
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(function (issueData) {
-          //console.log(issueData);
-          findResponsiveTime(issueData);
-        })
-        .catch(function (error) {
-          console.error('Error getting urls:', error);
-        });
+    //console.log("ISSUE URL:", issueUrl);
+
+    // to get past api rate limit, really jank since my github pat is included in plaintext lmfao
+    // DELETE THIS PART IN FINAL
+    const token = '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';
+    const headers = {
+      Authorization: `token ${token}`,
+    };
+    //end of jank
 
 
+    for (const url of issueUrl) {
+      try {
+        const response = await fetch(url, { headers }); //this line when caring about api rate
+        //const response = await fetch(url); //this line normally
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const issueData = await response.json();
+        const time = findResponsiveTime(issueData);
+        //console.log("test:", time);
+        timeDifference.push(time);
+      } catch (error) {
+        console.error('Error getting URL:', error);
+      }
     }
-  }
-  catch (error) {
+
+    console.log("time differences:", timeDifference);
+    var sum = timeDifference.reduce((acc, value) => acc + value, 0);
+    var avg = sum/timeDifference.length;
+    //const score = 1 - (avg - Math.min(...timeDifference)) / (Math.max(...timeDifference) - Math.min(...timeDifference));
+    const score = 1 - (avg / 31536000000);
+    console.log("avg time difference:", avg);
+    console.log("normalized score:", score);
+  } catch (error) {
     console.error('Error reading or parsing JSON:', error);
   }
 }
+
 //check_npm_for_open_source(file);
 parseContributors(jsonpath);
 parseResponsiveness(jsonpath);
