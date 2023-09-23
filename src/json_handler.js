@@ -95,7 +95,7 @@ function parseContributors(filePath) {
     }
 }
 //function to find time between the create and close for an issue
-function findResponsiveTime(data) {
+function OLDfindResponsiveTime(data) {
     var listDifference = []; //list to keep track of time differences for avg
     var openIssue = []; //list to keep track of open issues
     data.forEach(function (item) {
@@ -142,6 +142,14 @@ function findResponsiveTime(data) {
         return -1;
     }
 }
+function findResponsiveTime(data) {
+    var createdAt = new Date(data.created_at);
+    var closedAt = new Date(data.created_at);
+    var difference = closedAt.valueOf() - createdAt.valueOf();
+    console.log('Created At:', createdAt);
+    console.log('Closed At:', closedAt);
+    console.log('time difference:', difference);
+}
 function parseResponsiveness(filePath) {
     var fs = require('fs');
     try {
@@ -149,7 +157,7 @@ function parseResponsiveness(filePath) {
         var jsonData = fs.readFileSync(filePath, 'utf8');
         var data = JSON.parse(jsonData);
         // get the issues URLs
-        console.log(data);
+        //console.log(data);
         var baseUrl = data.issues_url;
         var issueUrl = [];
         console.log("BASE URL:", baseUrl);
@@ -159,7 +167,7 @@ function parseResponsiveness(filePath) {
         }
         console.log("ISSUE URL:", issueUrl);
         // Fetch contributors data
-        for (var i = 1; i <= 10; i++) {
+        for (var i = 0; i < 10; i++) {
             fetch(issueUrl[i])
                 .then(function (response) {
                 if (!response.ok) {
@@ -168,8 +176,8 @@ function parseResponsiveness(filePath) {
                 return response.json();
             })
                 .then(function (issueData) {
-                console.log(issueData);
-                //findResponsiveTime(receivedEventsData);
+                //console.log(issueData);
+                findResponsiveTime(issueData);
             })
                 .catch(function (error) {
                 console.error('Error getting urls:', error);

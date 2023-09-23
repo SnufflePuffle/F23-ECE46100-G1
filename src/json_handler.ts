@@ -100,7 +100,7 @@ function parseContributors(filePath: string) {
 
 
 //function to find time between the create and close for an issue
-function findResponsiveTime(data: any[]): number {
+function OLDfindResponsiveTime(data: any[]): number {
   const listDifference: number[] = []; //list to keep track of time differences for avg
   const openIssue: number[] = []; //list to keep track of open issues
   data.forEach(function (item) {
@@ -148,7 +148,16 @@ function findResponsiveTime(data: any[]): number {
   }
 }
 
+function findResponsiveTime(data: any) {
 
+
+    var createdAt = new Date(data.created_at);
+    var closedAt = new Date(data.created_at);
+    var difference = closedAt.valueOf() - createdAt.valueOf();
+    console.log('Created At:', createdAt);
+    console.log('Closed At:', closedAt);
+    console.log('time difference:', difference);
+}
 function parseResponsiveness(filePath: string) {
   var fs = require('fs');
   try {
@@ -167,7 +176,7 @@ function parseResponsiveness(filePath: string) {
     }
     console.log("ISSUE URL:", issueUrl);
     // Fetch contributors data
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 0; i < 10; i++) {
       fetch(issueUrl[i])
         .then(function (response) {
           if (!response.ok) {
@@ -176,14 +185,14 @@ function parseResponsiveness(filePath: string) {
           return response.json();
         })
         .then(function (issueData) {
-          console.log(issueData);
-          //findResponsiveTime(receivedEventsData);
+          //console.log(issueData);
+          findResponsiveTime(issueData);
         })
         .catch(function (error) {
           console.error('Error getting urls:', error);
         });
 
-      
+
     }
   }
   catch (error) {
